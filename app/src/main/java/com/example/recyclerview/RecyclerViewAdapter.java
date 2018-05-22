@@ -14,6 +14,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Filter;
+import android.widget.Filterable;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -25,13 +27,19 @@ import java.util.ArrayList;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder> {
+public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder> implements Filterable{
 
     private static final String TAG = "RecyclerViewAdapter";
-    private final ArrayList<NewContact> mContacts;
+    private  ArrayList<NewContact> mContacts;
 
     private ArrayList<String> mImages = new ArrayList<>();
     private Context mContext;
+
+
+    ArrayList<NewContact> nContactPojos;
+    ArrayList<NewContact> contactListFiltered;
+
+
 
     public RecyclerViewAdapter(Context context, ArrayList<NewContact> contacts) {
         mContacts = contacts;
@@ -102,6 +110,45 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         return mContacts.size();
     }
 
+    @Override
+    public Filter getFilter() {
+        return new Filter() {
+            @Override
+            protected FilterResults performFiltering(CharSequence charSequence) {
+                String charString = charSequence.toString();
+                if (charString.isEmpty()) {
+                    contactListFiltered = nContactPojos;
+                } else {
+                    ArrayList<NewContact> filteredList = new ArrayList<>();
+                    for (NewContact row : nContactPojos) {
+
+                        // name match condition. this might differ depending on your requirement
+                        // here we are looking for name or phone number match
+                        if (row.getName().toLowerCase().contains(charString.toLowerCase()) ||
+                                row.getEmail().contains(charSequence) ||
+                                row.getNumber().toLowerCase().contains(charString.toLowerCase())) {
+                            filteredList.add(row);
+                        }
+                    }
+
+                    contactListFiltered = filteredList;
+                }
+
+                FilterResults filterResults = new FilterResults();
+                filterResults.values = contactListFiltered;
+                return filterResults;
+            }
+
+            @Override
+            protected void publishResults(CharSequence charSequence, FilterResults filterResults) {
+                contactListFiltered = (ArrayList<NewContact>) filterResults.values;
+
+                // refresh the list with filtered data
+                notifyDataSetChanged();
+            }
+        };
+    }
+
     public class ViewHolder extends RecyclerView.ViewHolder{
 
 
@@ -124,4 +171,9 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         }
     }
 
+    public void setFilter(ArrayList<NewContact> newContacts){
+        mContacts = new ArrayList<>();
+        mContacts.addAll(newContacts);
+        notifyDataSetChanged();
+    }
 }
